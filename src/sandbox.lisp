@@ -1,4 +1,4 @@
-;;;; evaluator.lisp -- one request, one fresh modus process.
+;;;; sandbox.lisp -- the default handler: one request, one fresh modus process.
 ;;;;
 ;;;; Every request runs in a NEW process restored from a saved core: it starts in
 ;;;; ~25 ms, it is killed at the deadline (coreutils `timeout`), a crash in it is
@@ -12,13 +12,13 @@
 ;;;; prints one line, @@RESULT followed by a readable plist, which is all the parent
 ;;;; parses: everything else the child writes is ignored.
 
-(in-package #:modus-agent)
+(in-package #:emissary)
 
 (defvar *modus-binary* (or (uiop:getenv "MODUS_BIN") "modus")
   "The modus executable children run.")
 (defvar *eval-timeout* 10 "Seconds a request may run before it is killed.")
 (defvar *max-reply* 16000 "Characters of a result or of output sent back.")
-(defvar *work-dir* nil "Where the core and the per-request scripts live.")
+(defvar *work-dir* nil "Where the core and the per-request scripts live (the emissary's directory).")
 
 (defun %work-file (name)
   (merge-pathnames name *work-dir*))
@@ -78,7 +78,7 @@ is not there yet."
 
 (defvar *request-counter* 0)
 
-(defun evaluate (text)
+(defun sandbox-evaluate (text)
   "Evaluate the forms in TEXT in a fresh modus process.  Returns a plist:
 (:OK (\"value\" ...) :OUTPUT \"...\"), (:ERROR \"message\" :OUTPUT \"...\"),
 (:TIMEOUT SECONDS) or (:FAILED \"why\")."
@@ -105,3 +105,8 @@ is not there yet."
                      (second r) (let ((o (getf (cddr r) :output))) (and o (plusp (length o)) o))))
      (:timeout (format nil "timeout: stopped after ~a s" (second r)))
      (t (format nil "failed: ~a" (second r))))))
+
+(defun sandboxed-eval (request)
+  "The default handler: evaluate REQUEST's text as Lisp forms in a fresh modus
+process and answer with the result.  See SANDBOX-EVALUATE."
+  (format-result (sandbox-evaluate (request-text request))))
