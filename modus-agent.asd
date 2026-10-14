@@ -13,4 +13,5 @@
                 :components ((:file "package")
                              (:file "evaluator")
                              (:file "agent")
-                             (:file "giftwrap")))))
+                             (:file "giftwrap")
+                             (:file "marmot")))))

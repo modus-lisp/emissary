@@ -15,4 +15,6 @@
    #:ensure-core #:evaluate #:*modus-binary* #:*eval-timeout* #:*max-reply*
    ;; the agent
    #:agent #:make-agent #:agent-npub #:agent-pubkey #:run-agent #:agent-step
-   #:load-allowlist #:authorized-p))
+   #:load-allowlist #:authorized-p
+   ;; transports beyond gift wraps
+   #:attach-marmot #:*marmot-interval*))

@@ -20,12 +20,19 @@ SEAL, not the wrap, so a small SINCE window is enough."
                              :since (- (%unix-now) 120)))
    :on-event (lambda (wrap relay)
                (declare (ignore relay))
+               ;; UNWRAP-RUMOR, not UNWRAP-GIFTWRAP: it hands back the rumor's
+               ;; KIND.  Only kind 14 is a message to us; Marmot's Welcomes are
+               ;; kind-444 rumors in the same wraps to the same key, and must not
+               ;; be read as Lisp.  It also fails closed on a wrap, seal or rumor
+               ;; that does not verify, and the rumor's author is the seal's signer.
                (handler-case
-                   (multiple-value-bind (text sender created)
-                       (nip59:unwrap-giftwrap (agent-secret agent) wrap)
-                     (enqueue agent (list :transport :giftwrap :sender sender
-                                          :text text :created created
-                                          :id (event:event-id wrap))))
+                   (let ((rumor (nip59:unwrap-rumor (agent-secret agent) wrap)))
+                     (when (eql (event:event-kind rumor) 14)
+                       (enqueue agent (list :transport :giftwrap
+                                            :sender (event:event-pubkey rumor)
+                                            :text (event:event-content rumor)
+                                            :created (event:event-created-at rumor)
+                                            :id (event:event-id wrap)))))
                  (error (e) (log-line agent "giftwrap: could not open ~a: ~a"
                                       (event:event-id wrap) e))))))
 
