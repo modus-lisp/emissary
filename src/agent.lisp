@@ -108,7 +108,12 @@ allowlist (allow.txt) and the evaluation core.  RELAYS: relay URLs for gift wrap
 (defun agent-step (agent &optional (wait 0.1))
   "One turn: service the relays and the other transports, then handle what came in."
   (when (agent-pool agent) (relay:pump wait))
-  (dolist (tr (agent-transports agent)) (ignore-errors (funcall (cdr tr) agent)))
+  (dolist (tr (agent-transports agent))
+    (let ((t0 (get-internal-real-time)))
+      (ignore-errors (funcall (cdr tr) agent))
+      ;; a transport that holds the loop delays every other one: say so
+      (let ((ms (round (* 1000 (- (get-internal-real-time) t0)) internal-time-units-per-second)))
+        (when (> ms 500) (log-line agent "~a: one step took ~d ms" (car tr) ms)))))
   (loop while (agent-queue agent)
         do (%handle agent (pop (agent-queue agent)))))
 

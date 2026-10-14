@@ -17,4 +17,5 @@
    #:agent #:make-agent #:agent-npub #:agent-pubkey #:run-agent #:agent-step
    #:load-allowlist #:authorized-p
    ;; transports beyond gift wraps
-   #:attach-marmot #:*marmot-interval*))
+   #:attach-marmot #:*marmot-interval*
+   #:attach-fips #:*fips-port* #:*fips-max-reply*))

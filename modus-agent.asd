@@ -14,4 +14,5 @@
                              (:file "evaluator")
                              (:file "agent")
                              (:file "giftwrap")
-                             (:file "marmot")))))
+                             (:file "marmot")
+                             (:file "fips")))))
