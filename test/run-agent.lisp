@@ -1,0 +1,13 @@
+;;;; test/run-agent.lisp -- run the agent on modus until AGENT_STOP exists.
+;;;;   AGENT_DIR, AGENT_RELAY, AGENT_STOP, MODUS_BIN, AGENT_TIMEOUT
+(load "/home/claude/peek-2026-10-13/modus-agent/test/deps.lisp")
+(asdf:load-system "modus-agent")
+(setf agent:*eval-timeout* (parse-integer (or (uiop:getenv "AGENT_TIMEOUT") "10")))
+(defvar *agent* (agent:make-agent :dir (uiop:getenv "AGENT_DIR")
+                                  :relays (list (uiop:getenv "AGENT_RELAY"))))
+(with-open-file (o (concatenate 'string (uiop:getenv "AGENT_DIR") "ready")
+                   :direction :output :if-exists :supersede)
+  (write-line (agent:agent-npub *agent*) o))
+(defvar *stop* (uiop:getenv "AGENT_STOP"))
+(agent:run-agent *agent* :until (lambda () (probe-file *stop*)))
+(format t "~&[agent] stopped~%")
