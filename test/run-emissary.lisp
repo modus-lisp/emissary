@@ -1,7 +1,7 @@
 ;;;; test/run-emissary.lisp -- run an emissary (modus or SBCL) until EMISSARY_STOP exists.
 ;;;;   EMISSARY_DIR, EMISSARY_RELAY, EMISSARY_STOP, MODUS_BIN, EMISSARY_TIMEOUT,
 ;;;;   EMISSARY_MARMOT (any value), EMISSARY_FIPS_UDP (host:port)
-(load "/home/claude/peek-2026-10-13/emissary/test/deps.lisp")
+(load (merge-pathnames "deps.lisp" (make-pathname :name nil :type nil :defaults *load-truename*)))
 (asdf:load-system "emissary")
 (setf emissary:*eval-timeout* (parse-integer (or (uiop:getenv "EMISSARY_TIMEOUT") "10")))
 (defvar *relay* (uiop:getenv "EMISSARY_RELAY"))

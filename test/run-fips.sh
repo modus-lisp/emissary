@@ -2,13 +2,14 @@
 # test/run-fips.sh [MODUS] -- the agent on modus runs a FIPS node; an SBCL cl-fips
 # node dials it over UDP on localhost and sends forms as DataPackets.
 set -u
+HERE=$(cd "$(dirname "$0")/.." && pwd); cd "$HERE"
 M=$(readlink -f "${1:-modus}")
 # EMISSARY_LISP=sbcl runs the emissary itself on SBCL (children are still modus)
 if [ "${EMISSARY_LISP:-modus}" = sbcl ]; then RUN="sbcl --dynamic-space-size 4096 --script"; else RUN="$M --script"; fi
 W=$(mktemp -d /tmp/emissary-fips.XXXXXX)
 UPORT=$(python3 -c 'import socket; s=socket.socket(socket.AF_INET,socket.SOCK_DGRAM); s.bind(("127.0.0.1",0)); print(s.getsockname()[1])')
 trap 'touch $W/stop; sleep 2; kill $AGENT_PID 2>/dev/null' EXIT
-keys=$(sbcl --script <(echo '(require :asdf) (load "/home/claude/peek-2026-10-13/emissary/test/deps.lisp") (asdf:load-system "cl-nostr")
+keys=$(sbcl --script <(echo '(require :asdf) (load "'"$HERE"'/test/deps.lisp") (asdf:load-system "cl-nostr")
   (dolist (i (list 1 2 3)) (let ((k (cl-nostr.keys:generate-keypair))) (format t "~a ~a ~a~%" (cl-nostr.keys:secret-hex k) (cl-nostr.keys:public-hex k) (cl-nostr.bech32:npub-encode (cl-nostr.keys:public-hex k)))))') 2>/dev/null)
 read AGENT_SEC AGENT_PUB AGENT_NPUB CLIENT_SEC CLIENT_PUB CLIENT_NPUB STRANGER_SEC STRANGER_PUB STRANGER_NPUB <<< $(echo $keys)
 mkdir -p $W/agent

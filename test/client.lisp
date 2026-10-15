@@ -1,6 +1,6 @@
 ;;;; test/client.lisp -- an SBCL client: gift-wrapped requests to the agent.
 ;;;;   CLIENT_KEY (hex), STRANGER_KEY (hex), AGENT_PUB (hex), AGENT_RELAY
-(load "/home/claude/peek-2026-10-13/modus-agent/test/deps.lisp")
+(load (merge-pathnames "deps.lisp" (make-pathname :name nil :type nil :defaults *load-truename*)))
 (asdf:load-system "cl-nostr")
 (defpackage :client (:use :cl))
 (in-package :client)

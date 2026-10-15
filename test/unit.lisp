@@ -1,7 +1,7 @@
 ;;;; test/unit.lisp -- emissary without a network: chunking, principals, dispatch.
 ;;;;   sbcl --script test/unit.lisp      (or: modus --script test/unit.lisp)
 ;;;; With MODUS_BIN set, also one request through the sandbox.
-(load "/home/claude/peek-2026-10-13/emissary/test/deps.lisp")
+(load (merge-pathnames "deps.lisp" (make-pathname :name nil :type nil :defaults *load-truename*)))
 (asdf:load-system "emissary")
 (defpackage :unit (:use :cl))
 (in-package :unit)
@@ -28,7 +28,7 @@
   (chk "nothing lost" (remove #\Space (apply #'concatenate 'string chunks)) (remove #\Space text)))
 
 ;; principals
-(defvar *dir* (format nil "/tmp/emissary-unit-~d/" (random 1000000 (make-random-state t))))
+(defvar *dir* (format nil "/tmp/emissary-unit-~d-~d/" (get-universal-time) (random 1000000 (make-random-state t))))
 (ensure-directories-exist *dir*)
 (defvar *a* (cl-nostr.keys:generate-keypair))
 (defvar *b* (cl-nostr.keys:generate-keypair))
@@ -59,10 +59,17 @@
 (chk "the principal is answered once (ids deduplicate), the stranger not at all"
      *sent* (list (list (cl-nostr.keys:public-hex *a*) "HI")))
 
-;; the sandbox, when there is a modus to run
+;; the sandbox, when there is a modus to run -- including over a core some other
+;; modus binary saved, which must be re-made rather than fail every request
 (when (uiop:getenv "MODUS_BIN")
   (setf emissary:*modus-binary* (uiop:getenv "MODUS_BIN"))
-  (chk "the sandbox evaluates" (emissary:format-result (emissary:sandbox-evaluate "(* 6 7)")) "42"))
+  (chk "the sandbox evaluates" (emissary:format-result (emissary:sandbox-evaluate "(* 6 7)")) "42")
+  (with-open-file (o (concatenate 'string *dir* "eval.core") :direction :output
+                     :if-exists :supersede :element-type '(unsigned-byte 8))
+    (dotimes (i 4096) (write-byte 0 o)))
+  (setf emissary::*core-checked* nil)
+  (chk "a core this binary will not restore is re-made"
+       (emissary:format-result (emissary:sandbox-evaluate "(+ 40 2)")) "42"))
 
 (format t "~&UNIT: ~a checks, ~a failed~%" *checks* *fails*)
 #+sbcl (sb-ext:exit :code (if (zerop *fails*) 0 1))

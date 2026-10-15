@@ -30,14 +30,29 @@
     (declare (ignore err))
     (values out code)))
 
+(defvar *core-checked* nil "The core path ENSURE-CORE has checked in this process.")
+
+(defun %core-restores-p (core)
+  "True when the current *MODUS-BINARY* restores CORE.  A core holds addresses into
+the binary that saved it, so one saved by another build is refused at start-up --
+and every request would fail until it was re-made."
+  (and (search "core-ok"
+               (%run (list *modus-binary* "--core" core
+                           "--eval" "(progn (princ \"core-ok\") (sys-exit 0))")))
+       t))
+
 (defun ensure-core (&key force)
-  "The path of the saved core children restore, made by a child process if it
-is not there yet."
+  "The path of the saved core children restore: made by a child process if it is
+not there, and re-made once per process if this modus binary does not restore it
+(modus was upgraded under it)."
   (let ((core (namestring (%work-file "eval.core"))))
-    (when (or force (not (probe-file core)))
+    (when (or force
+              (not (probe-file core))
+              (and (not (equal *core-checked* core)) (not (%core-restores-p core))))
       (%run (list *modus-binary* "--eval" (format nil "(save-and-die ~s)" core)))
-      (unless (probe-file core)
-        (error "modus-agent: could not save the evaluation core at ~a" core)))
+      (unless (and (probe-file core) (%core-restores-p core))
+        (error "emissary: could not save an evaluation core at ~a with ~a" core *modus-binary*)))
+    (setf *core-checked* core)
     core))
 
 (defun %lisp-string (s)

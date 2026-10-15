@@ -1,6 +1,6 @@
 ;;;; test/marmot-client.lisp -- an SBCL cl-marmot member: invite the agent into a
 ;;;; group and send it forms there.   CLIENT_KEY (hex), AGENT_PUB (hex), AGENT_RELAY, CLIENT_HOME
-(load "/home/claude/peek-2026-10-13/modus-agent/test/deps.lisp")
+(load (merge-pathnames "deps.lisp" (make-pathname :name nil :type nil :defaults *load-truename*)))
 (asdf:load-system "cl-marmot")
 (defpackage :mclient (:use :cl))
 (in-package :mclient)

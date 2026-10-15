@@ -1,6 +1,6 @@
 ;;;; test/fips-client.lisp -- an SBCL cl-fips node: dial the agent over UDP and send
 ;;;; it forms as DataPackets.   CLIENT_KEY, STRANGER_KEY (hex), AGENT_NPUB, AGENT_ADDR
-(load "/home/claude/peek-2026-10-13/modus-agent/test/deps.lisp")
+(load (merge-pathnames "deps.lisp" (make-pathname :name nil :type nil :defaults *load-truename*)))
 (asdf:load-system "cl-fips/daemon")
 (asdf:load-system "cl-nostr")
 (defpackage :fclient (:use :cl))

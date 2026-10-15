@@ -2,6 +2,7 @@
 # test/run-marmot.sh [MODUS] -- the agent on modus joins a Marmot group an SBCL
 # cl-marmot client creates, and answers forms sent there.  Throwaway nak relay.
 set -u
+HERE=$(cd "$(dirname "$0")/.." && pwd); cd "$HERE"
 M=$(readlink -f "${1:-modus}")
 # EMISSARY_LISP=sbcl runs the emissary itself on SBCL (children are still modus)
 if [ "${EMISSARY_LISP:-modus}" = sbcl ]; then RUN="sbcl --dynamic-space-size 4096 --script"; else RUN="$M --script"; fi
@@ -11,7 +12,7 @@ RELAY="ws://127.0.0.1:$PORT"
 nak serve --hostname 127.0.0.1 --port $PORT -q > $W/relay.log 2>&1 &
 RELAY_PID=$!
 trap 'touch $W/stop; sleep 2; kill $RELAY_PID $AGENT_PID 2>/dev/null' EXIT
-keys=$(sbcl --script <(echo '(require :asdf) (load "/home/claude/peek-2026-10-13/emissary/test/deps.lisp") (asdf:load-system "cl-nostr")
+keys=$(sbcl --script <(echo '(require :asdf) (load "'"$HERE"'/test/deps.lisp") (asdf:load-system "cl-nostr")
   (dolist (i (list 1 2)) (let ((k (cl-nostr.keys:generate-keypair))) (format t "~a ~a~%" (cl-nostr.keys:secret-hex k) (cl-nostr.keys:public-hex k))))') 2>/dev/null)
 read AGENT_SEC AGENT_PUB CLIENT_SEC CLIENT_PUB <<< $(echo $keys)
 mkdir -p $W/agent
