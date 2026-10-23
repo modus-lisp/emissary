@@ -30,7 +30,7 @@
 PEERS (cl-fips config entries), and handle DataPackets to PORT from principals.
 Returns the daemon."
   (let* ((kp (funcall (find-symbol "KEYPAIR-FROM-SECRET" "SECP256K1-FAST.ECDH")
-                      (u:hex->bytes (emissary-secret e))))
+                      (keys:secret-key-of (emissary-keypair e))))   ; copied into the FIPS keypair
          (d (%fips "MAKE-DAEMON" (list :udp (list :bind udp) :peers peers)
                    :keypair kp :log (make-broadcast-stream)
                    :on-event

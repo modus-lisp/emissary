@@ -54,7 +54,7 @@
   (let ((p (pool:make-pool (emissary-relays e) :timeout 15)))
     (setf (emissary-pool e) p)
     (ignore-errors
-      (pool:pool-publish p (event:build-event (keys:keypair-from-secret (emissary-secret e))
+      (pool:pool-publish p (event:build-event (emissary-keypair e)
                                               +dm-relays-kind+ ""
                                               :tags (mapcar (lambda (r) (list "relay" r))
                                                             (emissary-relays e)))))
@@ -70,7 +70,7 @@
 
 (defun %on-wrap (e wrap)
   (handler-case
-      (let ((rumor (nip59:unwrap-rumor (emissary-secret e) wrap)))
+      (let ((rumor (nip59:unwrap-rumor (emissary-keypair e) wrap)))
         (when (and (eql (event:event-kind rumor) 14)
                    (> (event:event-created-at rumor) (emissary-floor e)))
           (enqueue e (%make-request :transport :dm
@@ -86,8 +86,8 @@
 AFTER.  Returns the last one's created_at."
   (dolist (body (numbered-chunks text) after)
     (let ((wrap (if after
-                    (nip59:build-giftwrap (emissary-secret e) recipient body :after after)
-                    (nip59:build-giftwrap (emissary-secret e) recipient body))))
+                    (nip59:build-giftwrap (emissary-keypair e) recipient body :after after)
+                    (nip59:build-giftwrap (emissary-keypair e) recipient body))))
       (pool:pool-publish (emissary-pool e) wrap)
       (setf after (event:event-created-at wrap)))))
 

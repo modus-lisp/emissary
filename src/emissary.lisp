@@ -25,7 +25,7 @@
 
 (defstruct (emissary (:constructor %make-emissary))
   dir                ; key, allowlist, state, the sandbox core
-  secret             ; secret key, 64 hex
+  keypair            ; cl-nostr keypair: the secret lives in fixed memory
   pubkey             ; x-only public key, 64 hex
   (principals (make-hash-table :test 'equal))   ; pubkey hex -> how it was named
   (handler 'sandboxed-eval)                       ; (function request) -> reply text or NIL
@@ -91,15 +91,20 @@ principals.  Returns the pubkey, or NIL (logged) if WHO names none."
 
 ;;; ---- identity --------------------------------------------------------------
 
-(defun %secret (dir)
-  "The emissary's secret (DIR/emissary.key, made on first use, mode 0600)."
+(defun %load-keypair (dir)
+  "The emissary's keypair, from DIR/emissary.key (hex, made on first use, mode 0600).
+The secret goes straight into fixed memory; the hex text read from the file is
+overwritten once it has been decoded."
   (let ((path (merge-pathnames "emissary.key" dir)))
     (unless (probe-file path)
-      (let ((kp (keys:generate-keypair)))
+      (let* ((kp (keys:generate-keypair)) (hex (keys:secret-hex kp)))   ; an explicit export, to the file
         (with-open-file (o path :direction :output)
-          (write-line (keys:secret-hex kp) o))
+          (write-line hex o))
+        (fill hex #\0) (keys:keypair-wipe kp)
         (ignore-errors (uiop:run-program (list "chmod" "600" (namestring path))))))
-    (with-open-file (in path) (string-trim '(#\Space #\Newline #\Return) (read-line in)))))
+    (let ((line (with-open-file (in path) (read-line in))))
+      (unwind-protect (keys:keypair-from-secret (string-trim '(#\Space #\Newline #\Return) line))
+        (fill line #\0)))))
 
 (defun make-emissary (&key (dir (merge-pathnames ".emissary/" (user-homedir-pathname)))
                            relays allow (handler 'sandboxed-eval) on-log)
@@ -109,9 +114,9 @@ addresses), and, for the default handler, its sandbox core.  RELAYS: relay URLs
 for DMs; without them DMs are off.  Call EMISSARY-START, then EMISSARY-RUN or
 EMISSARY-STEP from your own loop."
   (let* ((dir (uiop:ensure-directory-pathname dir))
-         (secret (progn (ensure-directories-exist dir) (%secret dir)))
-         (e (%make-emissary :dir dir :secret secret
-                            :pubkey (keys:public-hex (keys:keypair-from-secret secret))
+         (kp (progn (ensure-directories-exist dir) (%load-keypair dir)))
+         (e (%make-emissary :dir dir :keypair kp
+                            :pubkey (keys:public-hex kp)
                             :handler handler :relays relays :on-log on-log)))
     (setf *work-dir* dir)
     (load-allowlist e (merge-pathnames "allow.txt" dir))

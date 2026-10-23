@@ -22,7 +22,7 @@ KeyPackage so it can be invited, and handle group messages from principals."
          (client (if (probe-file (concatenate 'string home "account.sexp"))
                      (%marmot "OPEN-ACCOUNT" home)
                      (%marmot "CREATE-ACCOUNT" :home home :relays relays :name "emissary"
-                                               :nsec (bech32:nsec-encode (emissary-secret e))))))
+                                               :nsec (bech32:nsec-encode (keys:secret-key-of (emissary-keypair e)))))))
     (%marmot "PUBLISH-KEY-PACKAGE" client)
     (%marmot "ADD-HANDLER" client
              (lambda (ev)

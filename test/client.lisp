@@ -4,10 +4,10 @@
 (asdf:load-system "cl-nostr")
 (defpackage :client (:use :cl))
 (in-package :client)
-(defvar *me* (uiop:getenv "CLIENT_KEY"))
-(defvar *stranger* (uiop:getenv "STRANGER_KEY"))
+(defvar *me* (cl-nostr.keys:keypair-from-secret (uiop:getenv "CLIENT_KEY")))       ; imported once, into fixed memory
+(defvar *stranger* (cl-nostr.keys:keypair-from-secret (uiop:getenv "STRANGER_KEY")))
 (defvar *agent* (uiop:getenv "AGENT_PUB"))
-(defvar *my-pub* (cl-nostr.keys:public-hex (cl-nostr.keys:keypair-from-secret *me*)))
+(defvar *my-pub* (cl-nostr.keys:public-hex *me*))
 (defvar *pool* (cl-nostr.pool:make-pool (list (uiop:getenv "AGENT_RELAY"))))
 (defvar *replies* (make-hash-table :test 'equal))
 (defvar *lock* (bt:make-lock))
